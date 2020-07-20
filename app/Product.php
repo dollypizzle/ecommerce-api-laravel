@@ -14,15 +14,15 @@ class Product extends Model
         return "/api/product/{$this->id}";
     }
 
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
+    // public function user()
+    // {
+    //     return $this->belongsTo(User::class, 'user_id');
+    // }
 
-    protected static function booted()
-    {
-        static::creating(function ($product) {
-            $product->user_id = Auth::id();
-        });
-    }
+    // protected static function booted()
+    // {
+    //     static::creating(function ($product) {
+    //         $product->user_id = Auth::id();
+    //     });
+    // }
 }

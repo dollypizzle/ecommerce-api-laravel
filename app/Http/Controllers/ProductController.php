@@ -22,12 +22,24 @@ class ProductController extends Controller
     {
         $products = $this->product_repository_interface->index();
 
-        return response($products, 200);
+        return response()->json([
+            'products' => $products,
+        ], 200);
     }
 
     public function store()
     {
-        $product = $this->product_repository_interface->store();
+        $credentials = request()->validate([
+            'name' => 'required|string',
+            'brand' => 'required|string',
+            'price' => 'required|numeric',
+            'image' => 'required|string',
+            'description' => 'required|string'
+        ]);
+
+        $credentials['user_id'] = auth()->id();
+
+        $product = $this->product_repository_interface->store($credentials);
 
         $response = [
             'success' => true,
@@ -35,49 +47,44 @@ class ProductController extends Controller
             'message' => 'Product created successfully.',
         ];
 
-        return response()->json($response, 200);
+        return response()->json($response, 201);
     }
 
-    public function show($id)
+    public function show(Product $product)
     {
-
-        $product = $this->product_repository_interface->show($id);
-
-        if (is_null($product)) {
-            $response = [
-                'success' => false,
-                'message' => 'Product not found.'
-            ];
-            return response()->json($response, 404);
-        }
-
-        $response = [
-            'success' => true,
-            'data' => $product,
-            'message' => 'Product retrieved successfully.'
-        ];
-
-        return response()->json($response, 200);
+        return response()->json([
+            'product' => $product,
+        ], 200);
     }
 
-    public function update(Request $request, $id)
+    public function update(Product $product)
     {
-        $product = $this->product_repository_interface->update($request, $id);
-        $product->update($request->all());
+        $this->authorize('update', $product);
+
+        $credentials = request()->validate([
+            'name' => 'required|string',
+            'brand' => 'required|string',
+            'price' => 'required|numeric',
+            'image' => 'required|string',
+            'description' => 'required|string'
+        ]);
+
+        $this->product_repository_interface->update($product, $credentials);
 
         return response()->json([
             'success' => true,
-            'data' => $product,
+            'product' => $product,
             "message" => "Product updated successfully"
         ], 200);
     }
 
-    public function destroy($id)
+    public function destroy(Product $product)
     {
-       $product = $this->product_repository_interface->destroy($id);
+       $product = $this->product_repository_interface->destroy($product);
 
         return response()->json([
             'success' => true,
+            'product' => $product,
             "message" => "Product deleted successfully"
         ], 200);
     }

@@ -9,49 +9,37 @@ use Illuminate\Support\Facades\Auth;
 
 class ProductRepository implements ProductRepositoryInterface
 {
+    protected $product;
+
+    public function __construct(Product $product)
+    {
+       $this->product = $product;
+    }
+
     public function index()
     {
-        return  Product::get();
+        return $this->product->all();
     }
 
-    public function store()
+    public function store($credentials)
     {
-        request()->validate([
-            'name' => 'required|string',
-            'brand' => 'required|string',
-            'image' => 'required|string',
-            'price' => 'required|numeric',
-            'description' => 'required|string'
-        ]);
-
-        $products = new Product([
-            'user_id' => Auth::id(),
-            'name' => request('name'),
-            'brand' => request('brand'),
-            'image' => request('image'),
-            'price' => request('price'),
-            'description' => request('description')
-        ]);
-
-        $products->save();
-
-        return $products;
+        return $this->product->create($credentials);
     }
 
-    public function show($id)
+    public function show(Product $product)
     {
-        return Product::find($id);
+        return $product->get($product);
     }
 
-    public function update(Request $request, $id)
+    public function update($product, $credentials)
     {
-        return Product::find($id);
+        return $product->update($credentials);
 
     }
 
-    public function destroy($id)
+    public function destroy($product)
     {
-        return Product::findOrFail($id)->delete();
+        return $product->delete();
     }
 
 }

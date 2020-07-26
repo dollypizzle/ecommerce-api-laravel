@@ -17,8 +17,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('register', 'PassportController@register')->name('register');
 Route::post('login', 'PassportController@login')->name('login');
+Route::post('register', 'PassportController@register')->name('register');
 
 Route::middleware('auth:api')->group(function () {
     Route::post('logout', 'PassportController@logout');
@@ -28,6 +28,6 @@ Route::get('user', 'PassportController@userdetails')->name('userdetails');
 
 Route::get('/products', 'ProductController@index');
 Route::post('/products', 'ProductController@store')->middleware('auth:api');
-Route::get('/product/{id}', 'ProductController@show');
-Route::patch('/product/{id}', 'ProductController@update')->middleware('auth:api');
-Route::delete('/product/{id}', 'ProductController@destroy')->middleware('auth:api');
+Route::get('/product/{product}', 'ProductController@show');
+Route::patch('/product/{product}', 'ProductController@update')->middleware('auth:api');
+Route::delete('/product/{product}', 'ProductController@destroy')->middleware('auth:api');

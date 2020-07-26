@@ -21,7 +21,7 @@ abstract class TestCase extends BaseTestCase
     {
         $user = create('App\User');
 
-        $token = $user->createAcessToken();
+        $token = $user->createAccessToken();
 
         $header = ['Authorization' => "Bearer $token"];
 

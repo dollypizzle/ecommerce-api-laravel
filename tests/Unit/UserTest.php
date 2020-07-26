@@ -12,18 +12,19 @@ class UserTest extends TestCase
 
     /** @test */
     function test_new_user_can_register(){
+        // $this->withExceptionHandling();
 
         //User's data
-        $data = [
+        $credentials = [
             'firstname' => 'faby',
             'lastname' => 'dobo',
             'email' => 'test@example.com',
-            'phonenumber' => '0816169723',
+            'phonenumber' => '08161697231',
             'password' => bcrypt($password = 'example123'),
         ];
 
-       //Send post request to /register
-        $this->json('POST',route('register'),$data)
+       //Send a post request to /register
+        $this->json('POST',route('register'),$credentials)
         //Assert it was successful
         ->assertStatus(201)
         ->assertJson([
@@ -32,33 +33,10 @@ class UserTest extends TestCase
             'success' => true,
             'message' => 'User Created Successfully!',
         ]);
-
-        //Delete data
-        User::where('email','test@example.com')->delete();
-    }
-    /** @test */
-    function test_a_user_can_fetch_their_profile(){
-
-        //User's data
-        $data = [
-            'firstname' => 'faby',
-            'lastname' => 'dobo',
-            'email' => 'test@example.com',
-            'phonenumber' => '0816169723',
-            'password' => bcrypt($password = 'example123'),
-        ];
-
-       //Send get request to /user
-        $this->json('GET',route('userdetails'),$data)
-        //Assert it was successful
-        ->assertStatus(200);
-
-        //Delete data
-        User::where('email','test@example.com')->delete();
     }
 
     /** @test */
-    function test_user_can_login_with_correct_credentials()
+    function test_a_user_can_login_with_correct_credentials()
     {
         //Create user
         User::create([
@@ -83,9 +61,27 @@ class UserTest extends TestCase
             'lastname' => 'dobo',
             'email' => 'test@example.com',
         ]);
+    }
 
-        //Delete the user
-        User::where('email','test@gmail.com')->delete();
+    /** @test */
+    function test_a_user_can_fetch_their_profile(){
+
+        //User's data
+        $credentials = [
+            'firstname' => 'faby',
+            'lastname' => 'dobo',
+            'email' => 'test@example.com',
+            'phonenumber' => '0816169723',
+            'password' => bcrypt($password = 'example123'),
+        ];
+
+       //Send get request to /user
+        $this->json('GET',route('userdetails'),$credentials)
+        //Assert it was successful
+        ->assertStatus(200);
+
+        //Delete data
+        User::where('email','test@example.com')->delete();
     }
 
     /** @test */
@@ -128,9 +124,7 @@ class UserTest extends TestCase
     {
         $user = factory('App\User')->create();
 
-        $token = $user->createAcessToken();
-
-        $header = ['Authorization' => "Bearer $token"];
+        $header = $this->signIn();
 
         $this->json('get', '/api/products', [], $header)->assertStatus(200);
         $this->json('post', '/api/logout', [], $header)->assertStatus(200);
@@ -138,6 +132,14 @@ class UserTest extends TestCase
         $user = User::find($user->id);
 
         $this->assertEquals(null, $user->api_token);
+    }
+
+    /** @test */
+    function a_user_may_have_many_products()
+    {
+        $user = create('App\User');
+
+        $this->assertInstanceOf('Illuminate\Database\Eloquent\Collection', $user->products);
     }
 
     public function makeUser($overrides = [])

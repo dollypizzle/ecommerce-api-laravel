@@ -26,7 +26,7 @@ class PassportController extends Controller
             'password' => 'required|string'
         ]);
 
-        $user = $this->user_repository_interface->createUser($credentials);
+        $user = $this->user_repository_interface->create($credentials);
 
         $token = $this->createAccessToken($user);
 

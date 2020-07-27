@@ -15,7 +15,7 @@ class UserRepository implements UserRepositoryInterface
        $this->user = $user;
     }
 
-    public function createUser($credentials)
+    public function create($credentials)
     {
 
         $user = new User($credentials);

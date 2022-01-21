@@ -31,11 +31,13 @@ class PassportController extends Controller
     }
 
     public function login(){
-        if(Auth::attempt([
-                'email' => request('email'),
-                'password' => request('password')])){
+        $isLoggedIn = Auth::attempt([ 'email' => request('email'), 'password' => request('password')]);
+
+
+        if($isLoggedIn){
             $user = Auth::user();
             $token =  $this->createAcessToken($user);
+
             return response()->json([
                 'user' => $user,
                 'token' => $token,

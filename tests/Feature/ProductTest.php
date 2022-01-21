@@ -11,20 +11,11 @@ class CreateProductsTest extends TestCase
     use RefreshDatabase;
 
     /** @test */
-    function test_guests_cannnot_create_products()
-    {
-        $this->withExceptionHandling();
-
-        $this->post('/api/products')
-            ->assertRedirect('/api/login');
-    }
-
-    /** @test */
     function test_a_user_can_create_a_product()
     {
         $header = $this->signIn();
 
-        $data = [
+        $credentials = [
             'name' => 'Sony vio',
             'brand' => 'Sony',
             'image' => 'http//unsplash.com/helloworld',
@@ -32,8 +23,9 @@ class CreateProductsTest extends TestCase
             'description' => 'A phone you will love'
         ];
 
-        $this->json('POST', '/api/products', $data, $header)
-            ->assertStatus(200);
+        $this->json('POST', '/api/products', $credentials, $header)
+            ->assertStatus(201);
+        $this->assertDatabaseHas('products', $credentials);
     }
 
     /** @test */
@@ -89,8 +81,6 @@ class CreateProductsTest extends TestCase
     /** @test */
     function test_a_product_requires_a_name()
     {
-        // $this->withExceptionHandling();
-
         $this->publishProduct(['name' => ''])
             ->assertSessionHasErrors('name');
     }
@@ -98,8 +88,6 @@ class CreateProductsTest extends TestCase
     /** @test */
     function test_a_product_requires_a_brand()
     {
-        // $this->withExceptionHandling();
-
         $this->publishProduct(['brand' => ''])
             ->assertSessionHasErrors('brand');
     }
@@ -107,8 +95,6 @@ class CreateProductsTest extends TestCase
     /** @test */
     function test_a_product_requires_a_image()
     {
-        // $this->withExceptionHandling();
-
         $this->publishProduct(['image' => ''])
             ->assertSessionHasErrors('image');
     }
@@ -116,8 +102,6 @@ class CreateProductsTest extends TestCase
     /** @test */
     function test_a_product_requires_a_price()
     {
-        // $this->withExceptionHandling();
-
         $this->publishProduct(['price' => ''])
             ->assertSessionHasErrors('price');
     }
@@ -125,41 +109,55 @@ class CreateProductsTest extends TestCase
     /** @test */
     function test_a_product_requires_a_description()
     {
-        // $this->withExceptionHandling();
-
         $this->publishProduct(['description' => ''])
             ->assertSessionHasErrors('description');
     }
 
     /** @test */
-    function test_a_product_can_only_be_updated_by_owner()
+    function test_a_product_cannot_be_updated_by_a_guest()
     {
+        $this->withExceptionHandling();
+
         $header = $this->signIn();
 
-        $product = factory(Product::class)->create([
+        $product = create('App\Product',
+            ['user_id' => create('App\User')->id]
+        );
+
+        $this->patch($product->path(), [], $header)
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    function test_a_product_can_only_be_updated_by_its_owner()
+    {
+        $this->withExceptionHandling();
+        $user = create('App\User');
+
+        $token = $user->createAccessToken();
+        $header = ['Authorization' => "Bearer $token"];
+
+        $product = create('App\Product',
+            ['user_id' => $user->id]
+        );
+
+        $credentials = [
             'name' => 'Sony vio',
             'brand' => 'Sony',
             'image' => 'http//unsplash.com/helloworld',
             'price' => 2000,
             'description' => 'A phone you will love'
-        ]);
-
-        $payload = [
-            'name' => 'Sony',
         ];
 
-        $response = $this->json('PATCH', '/api/product/' . $product->id, $payload, $header)
-            ->assertStatus(200);
-    }
+        $this->patch($product->path(), $credentials, $header);
 
-    /** @test */
-    function test_a_guest_cannot_edit_a_product()
-    {
-        $header = $this->withExceptionHandling()->signIn();
-
-        $this->patch('/api/product/1', $header)
-            ->assertRedirect('/api/login')
-            ->assertStatus(302);
+        tap($product->fresh(), function ($product) {
+            $this->assertEquals('Sony vio', $product->name);
+            $this->assertEquals('Sony', $product->brand);
+            $this->assertEquals('http//unsplash.com/helloworld', $product->image);
+            $this->assertEquals('2000', $product->price);
+            $this->assertEquals('A phone you will love', $product->description);
+        });
     }
 
     function test_a_product_can_only_be_deleted_by_owner()
@@ -178,6 +176,22 @@ class CreateProductsTest extends TestCase
             ->assertStatus(200);
     }
 
+    /** @test */
+    function a_product_has_a_path()
+    {
+        $product = create('App\Product');
+
+        $this->assertEquals("/api/product/{$product->id}", $product->path());
+    }
+
+    /** @test */
+    function a_product_has_an_owner()
+    {
+        $product = create('App\Product');
+
+        $this->assertInstanceOf('App\User', $product->user);
+    }
+
     protected function publishProduct($overrides = [])
     {
         $header = $this->withExceptionHandling()->signIn();
@@ -185,5 +199,9 @@ class CreateProductsTest extends TestCase
         $products = make('App\Product', $overrides);
 
         return $this->post('/api/products', $products->toArray(), $header);
+    }
+
+    protected function createAccessToken ($user) {
+        return $user->createToken('App Access Token')->accessToken;
     }
 }

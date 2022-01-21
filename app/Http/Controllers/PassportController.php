@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Data\Repositories\User\UserRepositoryInterface;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Carborn\Carbon;
 
 class PassportController extends Controller
 {
@@ -18,45 +18,55 @@ class PassportController extends Controller
 
     public function register()
     {
-        $user = $this->user_repository_interface->createUser();
+        $credentials = request()->validate([
+            'firstname' => 'required|string',
+            'lastname' => 'required|string',
+            'email' => 'required|string|email|unique:users',
+            'phonenumber' => 'required|digits:11',
+            'password' => 'required|string'
+        ]);
 
-        $token = $this->createAcessToken($user);
+        $user = $this->user_repository_interface->createUser($credentials);
+
+        $token = $this->createAccessToken($user);
+
+        return response()->json([
+            'success' => true,
+            'user' => $user,
+            'token' => $token,
+            'message' => 'User Created Successfully!',
+        ], 201);
+    }
+
+    public function login()
+    {
+        $credentials = request()->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        if(!Auth::attempt($credentials))
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 401);
+
+        $user = Auth::user();
+
+        $token = $this->createAccessToken($user);
 
         return response()->json([
             'user' => $user,
             'token' => $token,
             'success' => true,
-            'message' => 'User Created Successfully!'
-        ], 201);
-    }
-
-    public function login(){
-        $isLoggedIn = Auth::attempt([ 'email' => request('email'), 'password' => request('password')]);
-
-
-        if($isLoggedIn){
-            $user = Auth::user();
-            $token =  $this->createAcessToken($user);
-
-            return response()->json([
-                'user' => $user,
-                'token' => $token,
-                'success' => true,
-                'message' => 'You Have Logged in Successfully!'
-            ], 200);
-        }
-        else{
-            return response()->json(['
-                error'=>'Unauthorised User'
-            ], 401);
-        }
+            'message' => 'You Have Logged in Successfully!'
+        ], 200);
     }
 
     public function userdetails()
     {
-
         $user = Auth::user();
-        return response()->json(['user' => $user], 200);
+        return response()
+            ->json(['user' => $user], 200);
     }
 
     public function logout (Request $request) {
@@ -71,7 +81,7 @@ class PassportController extends Controller
         return response($response, 200);
     }
 
-    public function createAcessToken ($user) {
+    public function createAccessToken ($user) {
         return $user->createToken('App Access Token')->accessToken;
     }
 

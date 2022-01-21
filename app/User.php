@@ -2,7 +2,7 @@
 
 namespace App;
 
-use App\Data\Models\Product;
+use App\Product;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -43,12 +43,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // public function products()
-    // {
-    //     return $this->hasMany(Product::class);
-    // }
-
-    public function createAcessToken() {
+    public function createAccessToken() {
         return $this->createToken('App Access Token')->accessToken;
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'user_id');
     }
 }
